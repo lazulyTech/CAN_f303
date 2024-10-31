@@ -23,7 +23,7 @@ Nucleo-F303K8でCAN通信をしようと思って色々やってみたところ�
 ## 関係しそうなファイル
 - [Core/Src/main.c](./Core/Src/main.c)
     - メインの処理を書いた
-- [Core/Inc/Connectivity/can.c](Core/Inc/Connectivity/can.c)
+- [Core/Inc/Connectivity/can.h](Core/Inc/Connectivity/can.h)
     - CAN通信周りの関数をまとめた
 - [CAN_f303.ioc](./CAN_f303.ioc)
     - CubeMXの設定ファイル
