@@ -133,10 +133,20 @@ int main(void)
   MX_CAN_Init();
   /* USER CODE BEGIN 2 */
   can_init(&hcan);
-  // can_configFilter_mask(1, 1, 1, 1);
-  // can_configFilter_mask(0x000, 0b1111, 0x001, 0b1111);
-  // can_configFilter_mask(0x000, 0b0000, 0x001, 0b0000);
-  // can_setReceiveCallback(can_callback);
+  // コールバック関数に動きを追加
+  can_setReceiveCallback(can_callback);
+
+  // 全IDを通るようにする
+  // can_configFilter_free();
+
+  // 1つずつフィルターとマスクを設定
+  // can_configFilter_mask(0, 0, 0xFF);
+  // can_configFilter_mask(1, 10, 0xFF);
+
+  // 上のをまとめて、2つを一気に設定できるようにした
+  can_configFilter(0, 10);
+
+
   can_start();
 
 
@@ -157,10 +167,10 @@ int main(void)
       if (data[i] > 0xFF) data[i] -= 0xFF;
     }
     int en;
-    en = can_transmitData(0x10, data, 8);
+    can_transmitData(10, data, 8);
     // en = 0;
     // if (!en) HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    HAL_Delay(2500);
+    HAL_Delay(1000);
     a++;
     if (a > 0xFF) a = 0;
   }

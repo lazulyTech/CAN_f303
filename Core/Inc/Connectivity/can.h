@@ -33,29 +33,16 @@ _can_data_t _can_rx_buf_id2 = {0};
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     CAN_RxHeaderTypeDef RxHeader;
     uint8_t RxData[8];
-    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK) {
         Error_Handler();
     } else {
         uint32_t id = RxHeader.ExtId;
-        // if (id == _can_id[0]) {
-        //     memcpy(_can_rx_buf_id1.data8, RxData, RxHeader.DLC);
-        //     for (uint8_t i = 0; i < 10; i++) {
-        //         HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-        //         HAL_Delay(50);
-        //         HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-        //         HAL_Delay(50);
-        //     }
-        // }
-        // else if (id == _can_id[1]) {
-        //     memcpy(_can_rx_buf_id2.data8, RxData, RxHeader.DLC);
-        //     for (uint8_t i = 0; i < 5; i++) {
-        //         HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-        //         HAL_Delay(100);
-        //         HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-        //         HAL_Delay(100);
-        //     }
-        // }
+        if (id == _can_id[0]) {
+            memcpy(_can_rx_buf_id1.data8, RxData, RxHeader.DLC);
+        }
+        else if (id == _can_id[1]) {
+            memcpy(_can_rx_buf_id2.data8, RxData, RxHeader.DLC);
+        }
 
         if (_can_callback != NULL) {
             _can_callback(id, RxData, RxHeader.DLC);
@@ -85,33 +72,68 @@ void can_init(CAN_HandleTypeDef *hcan) {
 
 /**
  * Filterを設定
- * @param FilterID1 1つ目のID
- * @param Mask1 0で無効、1で有効
- * @param FilterID2 2つ目のID
- * @param Mask2 0で無効、1で有効
+ * @param FilterNum フィルターバンク
+ * @param FilterID ID
+ * @param Mask 0で無効、1で有効
  */
-void can_configFilter_mask(uint32_t FilterID1, uint32_t Mask1, uint32_t FilterID2, uint32_t Mask2) {
-    _can_id[0] = FilterID1;
-    _can_id[1] = FilterID2;
+void can_configFilter_mask(uint8_t FilterNum, uint32_t FilterID, uint32_t Mask) {
+    uint32_t id, mask;
+    id = FilterID << 3;
+    mask = Mask << 3;
 
     CAN_FilterTypeDef filter;
-    filter.FilterIdHigh         = FilterID1 << 5;
-    filter.FilterIdLow          = FilterID2 << 5;
-    filter.FilterMaskIdHigh     = Mask1 << 5;
-    filter.FilterMaskIdLow      = Mask2 << 5;
-    // filter.FilterMaskIdHigh     = (Mask1 << 5) | 0x8;
-    // filter.FilterMaskIdLow      = (Mask2 << 5) | 0x8;
-    filter.FilterScale          = CAN_FILTERSCALE_16BIT;
+    filter.FilterIdHigh         = id >> 16;
+    filter.FilterIdLow          = id;
+    filter.FilterMaskIdHigh     = mask >> 16;
+    filter.FilterMaskIdLow      = mask;
+    filter.FilterScale          = CAN_FILTERSCALE_32BIT;
     filter.FilterFIFOAssignment = CAN_RX_FIFO0;
-    filter.FilterBank           = 0;
-    filter.FilterMode           = CAN_FILTERMODE_IDLIST;
-    filter.SlaveStartFilterBank = 0;
+    filter.FilterBank           = FilterNum;
+    filter.FilterMode           = CAN_FILTERMODE_IDMASK;
+    filter.SlaveStartFilterBank = 14;
     filter.FilterActivation = ENABLE;
 
     if (HAL_CAN_ConfigFilter(_hcan, &filter) != HAL_OK) {
         Error_Handler();
     }
 }
+
+/**
+ * Filterを設定(全IDを通す)
+ */
+void can_configFilter_free() {
+
+    CAN_FilterTypeDef filter;
+    filter.FilterIdHigh         = 0;
+    filter.FilterIdLow          = 0;
+    filter.FilterMaskIdHigh     = 0;
+    filter.FilterMaskIdLow      = 0;
+    // filter.FilterMaskIdHigh     = (Mask1 << 5) | 0x8;
+    // filter.FilterMaskIdLow      = (Mask2 << 5) | 0x8;
+    filter.FilterScale          = CAN_FILTERSCALE_32BIT;
+    filter.FilterFIFOAssignment = CAN_RX_FIFO0;
+    filter.FilterBank           = 0;
+    filter.FilterMode           = CAN_FILTERMODE_IDMASK;
+    filter.SlaveStartFilterBank = 14;
+    filter.FilterActivation = ENABLE;
+
+    if (HAL_CAN_ConfigFilter(_hcan, &filter) != HAL_OK) {
+        Error_Handler();
+    }
+}
+
+/**
+ * Filterを2つ設定
+ * @param FilterID1 ID1
+ * @param FilterID2 ID2
+ */
+void can_configFilter(uint32_t FilterID1, uint32_t FilterID2) {
+    _can_id[0] = FilterID1;
+    _can_id[1] = FilterID2;
+    can_configFilter_mask(0, FilterID1, 0xFF);
+    can_configFilter_mask(1, FilterID2, 0xFF);
+}
+
 
 /**
  * 受信コールバック関数を設定
