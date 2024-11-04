@@ -1,6 +1,11 @@
+# 追記
 (2024/11/4)  
 「フィルター設定は必須」「拡張フォーマットの場合は16bitモードが使えない」という指摘を受けて修正したところ、受信するようになりました！！  
 皆様ありがとうございました！
+
+参考にしたところ 豊田高専学ロボチームT.G.Tのファームウェアとライブラリ
+- [フィルタ設定使用部分](https://github.com/gakurobo-taro/C610_C620_controller/blob/7ee4d136e167d002680acfe43d7b0cdbe5db42da/UserLib/board_task.cpp#L65)
+- [ライブラリ](https://github.com/gakurobo-taro/STM32HAL_CommonLib/blob/7b034a12669c3be5f9b2885db8ab15a20c81b410/can_comm.hpp#L190)
 
 # CAN_f303
 Nucleo-F303K8でCAN通信をしようと思って色々やってみたところ~~うまくいかなかった~~(後にできるようになった)ので、公開をしてみます。  
